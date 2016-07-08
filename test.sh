@@ -17,15 +17,36 @@ handle_result() {
     return 0;
 }
 
+usage() {
+    printf "\
+\e[1mNAME\e[0m
+       $0 - Test ansible roles
+
+\e[1mSYNOPSIS\e[0m
+       $0 [OPTION...]
+
+\e[1mDESCRIPTION\e[0m
+       Test ansible role in a vagrant box
+
+        -h, --help          show this help
+        -v, --verbose       Increase verbosity
+"
+}
+
 VERBOSE=false
 while [[ $# -ge 1 ]]
 do
     case "$1" in
+        -h|--help)
+            usage
+            exit 0
+        ;;
         -v|--verbose)
             VERBOSE=true
         ;;
         *)
             # Unknown option
+            usage
             exit 1
         ;;
     esac
