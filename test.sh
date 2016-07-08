@@ -14,6 +14,12 @@ handle_result() {
     return 0;
 }
 
+PREVIOUS_VAGRANT_BOX_ID=$(vagrant global-status 2>/dev/null | grep " ansible_role_ubuntu_1604 " | awk '{ print $1; }')
+if [ ! -z "${PREVIOUS_VAGRANT_BOX_ID}" ]
+then
+    vagrant destroy -f ${PREVIOUS_VAGRANT_BOX_ID}
+fi
+
 REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 TESTING_DIRECTORY="$(mktemp -d)"
 
