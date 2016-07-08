@@ -1,0 +1,27 @@
+---
+- hosts: testservers
+  vars:
+    influxdb_databases:
+      - _internal
+      - my_db
+    influxdb_users:
+      - type: admin
+        name: admin
+        password: admin
+      - type: user
+        name: grafana
+        password: grafana
+        rights:
+          - "my_db:READ"
+      - type: user
+        name: telegraf
+        password: telegraf
+        rights:
+          - "my_db:WRITE"
+      - type: user
+        name: john
+        password: john
+        rights:
+          - "my_db:ALL"
+  roles:
+    - juliendufresne.influxdb
