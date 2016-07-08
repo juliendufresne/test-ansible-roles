@@ -14,6 +14,14 @@ handle_result() {
     return 0;
 }
 
+REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+TESTING_DIRECTORY="$(mktemp -d)"
+
+# Ensure we are in the repository root
+cd "${REPOSITORY_DIRECTORY}"
+cp -r inventory playbooks requirements.yml Vagrantfile "${TESTING_DIRECTORY}"
+
+cd "${TESTING_DIRECTORY}"
 printf "* booting machine: "
 vagrant up --no-provision &>/dev/null
 handle_result $?
@@ -33,3 +41,5 @@ handle_result $?
 rm "${OUTPUT_FILE}"
 
 vagrant destroy -f >/dev/null
+cd "${REPOSITORY_DIRECTORY}"
+rm -rf "${TESTING_DIRECTORY}"
