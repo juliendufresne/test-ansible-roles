@@ -25,4 +25,11 @@ grep -q 'unreachable=0.*failed=0' "${OUTPUT_FILE}"
 handle_result $?
 rm "${OUTPUT_FILE}"
 
+OUTPUT_FILE=$(mktemp)
+printf "* Idempotent test: "
+vagrant provision &>"${OUTPUT_FILE}"
+grep -q 'changed=0.*unreachable=0.*failed=0' "${OUTPUT_FILE}"
+handle_result $?
+rm "${OUTPUT_FILE}"
+
 vagrant destroy -f >/dev/null
