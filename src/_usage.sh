@@ -18,7 +18,16 @@ usage() {
 \e[1mDESCRIPTION\e[0m
        Test ansible role in a vagrant box
 
-        --ansible-role ANSIBLE_ROLE     use specified ansible role instead of default one. This option may be specified multiple times.
+        --ansible-role ANSIBLE_ROLE     use specified ansible role instead of default one. This option may be specified
+                                        multiple times.
+        --config-file CONFIG_FILE       use specified configuration file.
+                                        CONFIG_FILE must end with .md
+                                        The file path may be relative to:
+                                        - the current working directory
+                                        - this project root directory
+                                        - this project config directory
+                                        To ease usage, you can omit file directory and extension.
+                                        e.g: '--config-file default' may be resolved with <repository_root>/config/default.md
         -h, --help                      show this help.
         -v, --verbose                   increase verbosity.
         --vagrant-box VAGRANT_BOX       use specified vagrant box instead of default one. This option may be specified multiple times.

@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 
 REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. "${REPOSITORY_DIRECTORY}/src/_option_resolver.sh"
 . "${REPOSITORY_DIRECTORY}/src/_print.sh"
 . "${REPOSITORY_DIRECTORY}/src/_result.sh"
 . "${REPOSITORY_DIRECTORY}/src/_run.sh"
 . "${REPOSITORY_DIRECTORY}/src/_usage.sh"
 
 DEFAULT_ANSIBLE_ROLE="juliendufresne.influxdb"
+DEFAULT_CONFIG_FILE="${REPOSITORY_DIRECTORY}/config/default.md"
 DEFAULT_VAGRANT_BOX="geerlingguy/ubuntu1604"
 IS_VERBOSE=false
 VAGRANT_BOXES=
 ANSIBLE_ROLES=
+CONFIG_FILE=
 while [[ $# -ge 1 ]]
 do
     case "$1" in
@@ -22,6 +25,11 @@ do
                 exit 1
             fi
             ANSIBLE_ROLES="${ANSIBLE_ROLES} $2"
+            shift
+            ;;
+        --config-file)
+            CONFIG_FILE="$(resolve_config_file "$2" "${CONFIG_FILE}" "${REPOSITORY_DIRECTORY}")"
+            [ $? -ne 0 ] && { printf "$CONFIG_FILE"; exit 1; }
             shift
             ;;
         -h|--help)
@@ -50,6 +58,11 @@ do
     shift
 done
 
+if [ -z "${CONFIG_FILE}" ]
+then
+    CONFIG_FILE="${DEFAULT_CONFIG_FILE}"
+fi
+
 if [ -n "${ANSIBLE_ROLES}" ] && [ -n "${VAGRANT_BOXES}" ]
 then
     for ANSIBLE_ROLE in ${ANSIBLE_ROLES}
@@ -63,7 +76,7 @@ then
 fi
 
 # Use the configuration file
-tail -n+3 config.md | while read line
+tail -n+3 "${CONFIG_FILE}" | while read line
 do
     FOUND=true
     # Remove trailing pipe (because we can use them or not)
