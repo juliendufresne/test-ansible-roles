@@ -5,8 +5,8 @@ REPORT_CURRENT_FILE=
 ensure_report_file_exists() {
     local repository_directory="$1"
     local ansible_role="$2"
-    local file="${repository_directory}/results/${ansible_role}.md"
-    local template="${repository_directory}/results/template.md"
+    local file="${repository_directory}/reports/${ansible_role}.md"
+    local template="${repository_directory}/reports/template"
 
     if [ ! -f "${file}" ]
     then
@@ -36,6 +36,8 @@ report_success() {
 save_report() {
     local report_file="$1"
     local vagrant_box="$2"
+
+    echo " |" >>"${REPORT_CURRENT_FILE}"
 
     if grep -q "| ${vagrant_box}" "${report_file}"
     then
