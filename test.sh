@@ -3,6 +3,7 @@
 REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "${REPOSITORY_DIRECTORY}/src/_option_resolver.sh"
 . "${REPOSITORY_DIRECTORY}/src/_print.sh"
+. "${REPOSITORY_DIRECTORY}/src/_report.sh"
 . "${REPOSITORY_DIRECTORY}/src/_result.sh"
 . "${REPOSITORY_DIRECTORY}/src/_run.sh"
 . "${REPOSITORY_DIRECTORY}/src/_usage.sh"

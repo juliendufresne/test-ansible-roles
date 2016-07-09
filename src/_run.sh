@@ -91,11 +91,14 @@ run() {
     cd "${testing_directory}"
 
     create_vagrantfile
+    local report_file=$(ensure_report_file_exists "${repository_directory}" "${ansible_role}")
+    start_new_report "${vagrant_box}"
 
     boot_vagrant_box ${is_verbose}
     test_clean_install ${is_verbose}
     test_idempotent ${is_verbose}
 
+    save_report "${report_file}" "${vagrant_box}"
     clean_after_tests "${testing_directory}"
 
     return 0
