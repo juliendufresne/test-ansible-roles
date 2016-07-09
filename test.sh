@@ -46,6 +46,18 @@ run() {
     cd "${repository_directory}"
     cp -r inventory playbooks requirements.yml Vagrantfile.template "${testing_directory}"
 
+    # Checks ansible roles requirements
+    if [ ! -f "playbooks/${ansible_role}.yml" ]
+    then
+        error "You need to create the file playbooks/${ansible_role}.yml"
+        return 1
+    fi
+
+    if echo "${ansible_role}" | grep -q "." && ! grep -q "${ansible_role}" requirements.yml
+    then
+        warning "Your playbook ${ansible_role} looks like an ansible galaxy role but is not defined in requirements.yml"
+    fi
+
     cd "${testing_directory}"
 
     # Replace variables in Vagrantfile.template
@@ -80,6 +92,8 @@ run() {
     vagrant destroy -f >/dev/null
     cd "${repository_directory}"
     rm -rf "${testing_directory}"
+
+    return 0
 }
 
 usage() {
@@ -93,7 +107,7 @@ usage() {
 \e[1mDESCRIPTION\e[0m
        Test ansible role in a vagrant box
 
-        --ansible-role ANSIBLE_ROLE     use specified ansible role instead of default one.
+        --ansible-role ANSIBLE_ROLE     use specified ansible role instead of default one. This option may be specified multiple times.
         -h, --help                      show this help.
         -v, --verbose                   increase verbosity.
         --vagrant-box VAGRANT_BOX       use specified vagrant box instead of default one. This option may be specified multiple times.
@@ -102,7 +116,7 @@ usage() {
 
 IS_VERBOSE=false
 VAGRANT_BOXES=
-ANSIBLE_ROLE=
+ANSIBLE_ROLES=
 while [[ $# -ge 1 ]]
 do
     case "$1" in
@@ -113,7 +127,7 @@ do
                 usage
                 exit 1
             fi
-            ANSIBLE_ROLE="$2"
+            ANSIBLE_ROLES="${ANSIBLE_ROLES} $2"
             shift
             ;;
         -h|--help)
@@ -142,9 +156,9 @@ do
     shift
 done
 
-if [ -z "${ANSIBLE_ROLE}" ]
+if [ -z "${ANSIBLE_ROLES}" ]
 then
-    ANSIBLE_ROLE="juliendufresne.influxdb"
+    ANSIBLE_ROLES="juliendufresne.influxdb"
 fi
 
 if [ -z "${VAGRANT_BOXES}" ]
@@ -152,21 +166,12 @@ then
     VAGRANT_BOXES="geerlingguy/ubuntu1604"
 fi
 
-if [ ! -f "playbooks/${ANSIBLE_ROLE}.yml" ]
-then
-    error "You need to create the file playbooks/${ANSIBLE_ROLE}.yml"
-    exit 1
-fi
-
 REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "${REPOSITORY_DIRECTORY}"
 
-if echo "${ANSIBLE_ROLE}" | grep -q "." && ! grep -q "${ANSIBLE_ROLE}" requirements.yml
-then
-    warning "Your playbook ${ANSIBLE_ROLE} looks like an ansible galaxy role but is not defined in requirements.yml"
-fi
-
-for VAGRANT_BOX in ${VAGRANT_BOXES}
+for ANSIBLE_ROLE in ${ANSIBLE_ROLES}
 do
-    run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
+    for VAGRANT_BOX in ${VAGRANT_BOXES}
+    do
+        run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
+    done
 done
