@@ -2,7 +2,7 @@ Vagrant.require_version ">= 1.8.4"
 ENV["LC_ALL"] = "en_US.UTF-8"
 
 Vagrant.configure(2) do |config|
-    config.vm.box = "geerlingguy/ubuntu1604"
+    config.vm.box = "${VAGRANT_BOX}"
     config.vm.box_check_update = false
     config.vm.hostname = "ansible-role-ubuntu-1604"
 

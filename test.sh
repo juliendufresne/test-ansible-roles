@@ -17,6 +17,12 @@ handle_result() {
     return 0;
 }
 
+error() {
+    local message="$1"
+
+    printf "\e[1;91m%s\e[0m\n\n" "${message}"
+}
+
 usage() {
     printf "\
 \e[1mNAME\e[0m
@@ -28,12 +34,14 @@ usage() {
 \e[1mDESCRIPTION\e[0m
        Test ansible role in a vagrant box
 
-        -h, --help          show this help
-        -v, --verbose       Increase verbosity
+        -h, --help                  show this help
+        -v, --verbose               increase verbosity
+        --vagrant-box VAGRANT_BOX   use specified vagrant box instead of default one
 "
 }
 
 VERBOSE=false
+VAGRANT_BOX=
 while [[ $# -ge 1 ]]
 do
     case "$1" in
@@ -44,6 +52,16 @@ do
         -v|--verbose)
             VERBOSE=true
         ;;
+        --vagrant-box)
+            if [ -z "$2" ]
+            then
+                error "Argument is required for the --vagrant-box option"
+                usage
+                exit 1
+            fi
+            VAGRANT_BOX="$2"
+            shift
+        ;;
         *)
             # Unknown option
             usage
@@ -52,6 +70,11 @@ do
     esac
     shift
 done
+
+if [ -z "${VAGRANT_BOX}" ]
+then
+    VAGRANT_BOX="geerlingguy/ubuntu1604"
+fi
 
 PREVIOUS_VAGRANT_BOX_ID=$(vagrant global-status 2>/dev/null | grep " ansible_role_ubuntu_1604 " | awk '{ print $1; }')
 if [ ! -z "${PREVIOUS_VAGRANT_BOX_ID}" ]
@@ -64,9 +87,20 @@ TESTING_DIRECTORY="$(mktemp -d)"
 
 # Ensure we are in the repository root
 cd "${REPOSITORY_DIRECTORY}"
-cp -r inventory playbooks requirements.yml Vagrantfile "${TESTING_DIRECTORY}"
+cp -r inventory playbooks requirements.yml Vagrantfile.template "${TESTING_DIRECTORY}"
 
 cd "${TESTING_DIRECTORY}"
+
+# Replace variables in Vagrantfile.template
+while read -r line ; do
+    while [[ "$line" =~ (\$\{[a-zA-Z_][a-zA-Z_0-9]*\}) ]] ; do
+        LHS=${BASH_REMATCH[1]}
+        RHS="$(eval echo "\"${LHS}\"")"
+        line=${line//${LHS}/${RHS}}
+    done
+    echo "$line" >> Vagrantfile
+done < Vagrantfile.template
+
 OUTPUT_FILE=$(mktemp)
 printf "* booting machine: "
 vagrant up --no-provision &>"${OUTPUT_FILE}"
