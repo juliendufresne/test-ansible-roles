@@ -37,6 +37,8 @@ run() {
     local testing_directory="$(mktemp -d)"
     local previous_vagrant_box_id=$(vagrant global-status 2>/dev/null | grep " ansible_role_ubuntu_1604 " | awk '{ print $1; }')
 
+    printf "# Testing ansible role \033[1;34m%s\033[0m in vagrant box \033[1;34m%s\033[0m\n" "${ansible_role}" "${vagrant_box}"
+
     if [ ! -z "${previous_vagrant_box_id}" ]
     then
         vagrant destroy -f ${previous_vagrant_box_id}
