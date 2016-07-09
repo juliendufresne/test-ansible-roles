@@ -1,121 +1,13 @@
 #!/usr/bin/env bash
 
-handle_result() {
-    local args=$1
-    local output_file=$2
-    local is_verbose=$3
+REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. "${REPOSITORY_DIRECTORY}/src/_print.sh"
+. "${REPOSITORY_DIRECTORY}/src/_result.sh"
+. "${REPOSITORY_DIRECTORY}/src/_run.sh"
+. "${REPOSITORY_DIRECTORY}/src/_usage.sh"
 
-    if [ ${args} -ne 0 ]
-    then
-        printf "\e[1;31m%s\e[0m\n" "fail"
-        ${is_verbose} && cat ${output_file}
-
-        return 1;
-    fi
-    printf "\e[1;32m%s\e[0m\n" "pass"
-
-    return 0;
-}
-
-error() {
-    local message="$1"
-
-    printf "\e[1;91m%s\e[0m\n\n" "${message}"
-}
-
-warning() {
-    local message="$1"
-
-    printf "\e[1;93m%s\e[0m\n\n" "${message}"
-}
-
-run() {
-    local ansible_role="$1"
-    local vagrant_box="$2"
-    local repository_directory="$3"
-    local is_verbose=$4
-    local testing_directory="$(mktemp -d)"
-    local previous_vagrant_box_id=$(vagrant global-status 2>/dev/null | grep " ansible_role_ubuntu_1604 " | awk '{ print $1; }')
-
-    printf "# Testing ansible role \033[1;34m%s\033[0m in vagrant box \033[1;34m%s\033[0m\n" "${ansible_role}" "${vagrant_box}"
-
-    if [ ! -z "${previous_vagrant_box_id}" ]
-    then
-        vagrant destroy -f ${previous_vagrant_box_id}
-    fi
-
-    # Ensure we are in the repository root
-    cd "${repository_directory}"
-    cp -r inventory playbooks requirements.yml Vagrantfile.template "${testing_directory}"
-
-    # Checks ansible roles requirements
-    if [ ! -f "playbooks/${ansible_role}.yml" ]
-    then
-        error "You need to create the file playbooks/${ansible_role}.yml"
-        return 1
-    fi
-
-    if echo "${ansible_role}" | grep -q "." && ! grep -q "${ansible_role}" requirements.yml
-    then
-        warning "Your playbook ${ansible_role} looks like an ansible galaxy role but is not defined in requirements.yml"
-    fi
-
-    cd "${testing_directory}"
-
-    # Replace variables in Vagrantfile.template
-    while read -r line ; do
-        while [[ "$line" =~ (\$\{[a-zA-Z_][a-zA-Z_0-9]*\}) ]] ; do
-            LHS=${BASH_REMATCH[1]}
-            RHS="$(eval echo "\"${LHS}\"")"
-            line=${line//${LHS}/${RHS}}
-        done
-        echo "$line" >> Vagrantfile
-    done < Vagrantfile.template
-
-    local output_file=$(mktemp)
-    printf "* booting machine: "
-    vagrant up --no-provision &>"${output_file}"
-    handle_result $? "${output_file}" ${is_verbose}
-
-    local output_file=$(mktemp)
-    printf "* Fresh provisioning test: "
-    vagrant provision &>"${output_file}"
-    grep -q 'unreachable=0.*failed=0' "${output_file}"
-    handle_result $? "${output_file}" ${is_verbose}
-    rm "${output_file}"
-
-    local output_file=$(mktemp)
-    printf "* Idempotent test: "
-    vagrant provision &>"${output_file}"
-    grep -q 'changed=0.*unreachable=0.*failed=0' "${output_file}"
-    handle_result $? "${output_file}" ${is_verbose}
-    rm "${output_file}"
-
-    vagrant destroy -f >/dev/null
-    cd "${repository_directory}"
-    rm -rf "${testing_directory}"
-
-    return 0
-}
-
-usage() {
-    printf "\
-\e[1mNAME\e[0m
-       $0 - Test ansible roles
-
-\e[1mSYNOPSIS\e[0m
-       $0 [OPTION...]
-
-\e[1mDESCRIPTION\e[0m
-       Test ansible role in a vagrant box
-
-        --ansible-role ANSIBLE_ROLE     use specified ansible role instead of default one. This option may be specified multiple times.
-        -h, --help                      show this help.
-        -v, --verbose                   increase verbosity.
-        --vagrant-box VAGRANT_BOX       use specified vagrant box instead of default one. This option may be specified multiple times.
-"
-}
-
+DEFAULT_ANSIBLE_ROLE="juliendufresne.influxdb"
+DEFAULT_VAGRANT_BOX="geerlingguy/ubuntu1604"
 IS_VERBOSE=false
 VAGRANT_BOXES=
 ANSIBLE_ROLES=
@@ -160,15 +52,13 @@ done
 
 if [ -z "${ANSIBLE_ROLES}" ]
 then
-    ANSIBLE_ROLES="juliendufresne.influxdb"
+    ANSIBLE_ROLES="${DEFAULT_ANSIBLE_ROLE}"
 fi
 
 if [ -z "${VAGRANT_BOXES}" ]
 then
-    VAGRANT_BOXES="geerlingguy/ubuntu1604"
+    VAGRANT_BOXES="${DEFAULT_VAGRANT_BOX}"
 fi
-
-REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 for ANSIBLE_ROLE in ${ANSIBLE_ROLES}
 do
