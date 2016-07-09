@@ -50,20 +50,54 @@ do
     shift
 done
 
-if [ -z "${ANSIBLE_ROLES}" ]
+if [ -n "${ANSIBLE_ROLES}" ] && [ -n "${VAGRANT_BOXES}" ]
 then
-    ANSIBLE_ROLES="${DEFAULT_ANSIBLE_ROLE}"
-fi
-
-if [ -z "${VAGRANT_BOXES}" ]
-then
-    VAGRANT_BOXES="${DEFAULT_VAGRANT_BOX}"
-fi
-
-for ANSIBLE_ROLE in ${ANSIBLE_ROLES}
-do
-    for VAGRANT_BOX in ${VAGRANT_BOXES}
+    for ANSIBLE_ROLE in ${ANSIBLE_ROLES}
     do
-        run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
+        for VAGRANT_BOX in ${VAGRANT_BOXES}
+        do
+            run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
+        done
     done
+    exit 0;
+fi
+
+# Use the configuration file
+tail -n+3 config.md | while read line
+do
+    FOUND=true
+    # Remove trailing pipe (because we can use them or not)
+    line=$(echo ${line} | sed 's/^\s*|//' | sed 's/|\s*$//')
+    CURRENT_ANSIBLE_ROLE=$(echo ${line} | cut -d '|' -f 1 | sed 's/^\s*//' | sed 's/\s*$//')
+    CURRENT_VAGRANT_BOX=$(echo ${line} | cut -d '|' -f 2 | sed 's/^\s*//' | sed 's/\s*$//')
+
+    if [ -n "${ANSIBLE_ROLES}" ]
+    then
+        FOUND=false
+        for ANSIBLE_ROLE in ${ANSIBLE_ROLES}
+        do
+            if [ "${CURRENT_ANSIBLE_ROLE}" == "${ANSIBLE_ROLE}" ]
+            then
+                FOUND=true
+                break
+            fi
+        done
+    fi
+
+    if [ -n "${VAGRANT_BOXES}" ]
+    then
+        FOUND=false
+        for VAGRANT_BOX in ${VAGRANT_BOXES}
+        do
+            if [ "${CURRENT_VAGRANT_BOX}" == "${VAGRANT_BOX}" ]
+            then
+                FOUND=true
+                break
+            fi
+        done
+    fi
+
+    ${FOUND} || continue
+
+    run "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
 done
