@@ -23,9 +23,17 @@ error() {
     printf "\e[1;91m%s\e[0m\n\n" "${message}"
 }
 
+warning() {
+    local message="$1"
+
+    printf "\e[1;93m%s\e[0m\n\n" "${message}"
+}
+
 run() {
-    local repository_directory="$1"
-    local is_verbose=$2
+    local ansible_role="$1"
+    local vagrant_box="$2"
+    local repository_directory="$3"
+    local is_verbose=$4
     local testing_directory="$(mktemp -d)"
     local previous_vagrant_box_id=$(vagrant global-status 2>/dev/null | grep " ansible_role_ubuntu_1604 " | awk '{ print $1; }')
 
@@ -85,17 +93,29 @@ usage() {
 \e[1mDESCRIPTION\e[0m
        Test ansible role in a vagrant box
 
-        -h, --help                  show this help
-        -v, --verbose               increase verbosity
-        --vagrant-box VAGRANT_BOX   use specified vagrant box instead of default one
+        --ansible-role ANSIBLE_ROLE     use specified ansible role instead of default one.
+        -h, --help                      show this help.
+        -v, --verbose                   increase verbosity.
+        --vagrant-box VAGRANT_BOX       use specified vagrant box instead of default one. This option may be specified multiple times.
 "
 }
 
 IS_VERBOSE=false
 VAGRANT_BOXES=
+ANSIBLE_ROLE=
 while [[ $# -ge 1 ]]
 do
     case "$1" in
+        --ansible-role)
+            if [ -z "$2" ]
+            then
+                error "Argument is required for the $1 option"
+                usage
+                exit 1
+            fi
+            ANSIBLE_ROLE="$2"
+            shift
+            ;;
         -h|--help)
             usage
             exit 0
@@ -106,7 +126,7 @@ do
         --vagrant-box)
             if [ -z "$2" ]
             then
-                error "Argument is required for the --vagrant-box option"
+                error "Argument is required for the $1 option"
                 usage
                 exit 1
             fi
@@ -122,14 +142,31 @@ do
     shift
 done
 
+if [ -z "${ANSIBLE_ROLE}" ]
+then
+    ANSIBLE_ROLE="juliendufresne.influxdb"
+fi
+
 if [ -z "${VAGRANT_BOXES}" ]
 then
     VAGRANT_BOXES="geerlingguy/ubuntu1604"
 fi
 
+if [ ! -f "playbooks/${ANSIBLE_ROLE}.yml" ]
+then
+    error "You need to create the file playbooks/${ANSIBLE_ROLE}.yml"
+    exit 1
+fi
+
 REPOSITORY_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "${REPOSITORY_DIRECTORY}"
+
+if echo "${ANSIBLE_ROLE}" | grep -q "." && ! grep -q "${ANSIBLE_ROLE}" requirements.yml
+then
+    warning "Your playbook ${ANSIBLE_ROLE} looks like an ansible galaxy role but is not defined in requirements.yml"
+fi
 
 for VAGRANT_BOX in ${VAGRANT_BOXES}
 do
-    run "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
+    run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
 done
