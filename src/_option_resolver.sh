@@ -24,13 +24,6 @@ resolve_config_file() {
         current_option_value="${current_option_value}.md"
     fi
 
-    if [ ! -f "${current_option_value}" ] && [ "/" == "${current_option_value:0:1}" ]
-    then
-        error "Unable to find configuration file ${current_option_value}"
-        usage
-        exit 1
-    fi
-
     if [ -f "${current_option_value}" ]
     then
         current_option_value=$(readlink -m ${current_option_value})
