@@ -30,6 +30,8 @@ ensure_report_file_exists() {
 }
 
 report_display_column() {
+    [ -z "${REPORT_CURRENT_FILE}" ] && return
+
     local pad="$1"
     local value="$2"
 
@@ -38,14 +40,20 @@ report_display_column() {
 }
 
 report_failure() {
+    [ -z "${REPORT_CURRENT_FILE}" ] && return
+
     printf "| %s " "![FAIL](https://img.shields.io/badge/status-fail-red.svg)" >> ${REPORT_CURRENT_FILE}
 }
 
 report_success() {
+    [ -z "${REPORT_CURRENT_FILE}" ] && return
+
     printf "| %s " "![OK](https://img.shields.io/badge/status-pass-brightgreen.svg)" >> ${REPORT_CURRENT_FILE}
 }
 
 save_report() {
+    [ -z "${REPORT_CURRENT_FILE}" ] && return
+
     local report_file="$1"
     local distribution=$(cat "${REPORT_CURRENT_FILE}"|cut -d '|' -f 2 |sed 's/^\s*//'|sed 's/\s*$//')
     local new_line=
@@ -65,6 +73,12 @@ save_report() {
 }
 
 start_new_report() {
+    REPORT_CURRENT_FILE=$(readlink -m "report_line.md")
+    install_lsb_release_package || {
+        REPORT_CURRENT_FILE=
+        warning "Unable to install lsb_release binary on the guest. No reports will be generated"
+        return 0
+    }
     local id="$(vagrant ssh -- -n 'lsb_release --short --id')"
     local release="$(vagrant ssh -- -n 'lsb_release --short --release')"
     local distribution="$id $release"
@@ -74,8 +88,6 @@ start_new_report() {
     then
         distribution="$distribution ($codename)"
     fi
-
-    REPORT_CURRENT_FILE=$(readlink -m "report_line.md")
 
     report_display_column "| Distribution           |" "$distribution"    >> "${REPORT_CURRENT_FILE}"
     report_display_column "| last check date     |"   "$(date +"%F %T")" >> "${REPORT_CURRENT_FILE}"
