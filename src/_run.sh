@@ -19,6 +19,8 @@ clean_previous_vagrant_box() {
 }
 
 create_vagrantfile() {
+    local vagrant_box="$1"
+    local is_vbguest_enabled="$2"
     local line=
 
     while read -r line
@@ -58,6 +60,7 @@ run() {
     local vagrant_box="$2"
     local repository_directory="$3"
     local is_verbose=$4
+    local is_vbguest_enabled="$5"
     local testing_directory="$(mktemp -d)"
 
     printf "# Testing ansible role \033[1;34m%s\033[0m in vagrant box \033[1;34m%s\033[0m\n" "${ansible_role}" "${vagrant_box}"
@@ -82,7 +85,7 @@ run() {
 
     cd "${testing_directory}"
 
-    create_vagrantfile
+    create_vagrantfile "${vagrant_box}" "${is_vbguest_enabled}"
     local report_file=$(ensure_report_file_exists "${repository_directory}" "${ansible_role}")
 
     boot_vagrant_box ${is_verbose}

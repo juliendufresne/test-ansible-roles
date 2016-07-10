@@ -16,6 +16,7 @@ IS_VERBOSE=false
 VAGRANT_BOXES=
 ANSIBLE_ROLES=
 CONFIG_FILE=
+ENABLE_VBGUEST="false"
 while [[ $# -ge 1 ]]
 do
     case "$1" in
@@ -33,6 +34,9 @@ do
             CONFIG_FILE="$(resolve_config_file "$2" "${CONFIG_FILE}" "${REPOSITORY_DIRECTORY}")"
             [ $? -ne 0 ] && { printf "$CONFIG_FILE"; exit 1; }
             shift
+            ;;
+        --enable-vbguest)
+            ENABLE_VBGUEST="true"
             ;;
         -h|--help)
             usage
@@ -71,7 +75,7 @@ then
     do
         for VAGRANT_BOX in ${VAGRANT_BOXES}
         do
-            run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
+            run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
         done
     done
     exit 0;
@@ -84,6 +88,11 @@ do
     line=$(echo "${line}" | sed 's/^\s*|//' | sed 's/|\s*$//')
     CURRENT_ANSIBLE_ROLE=$(echo "${line}" | cut -d '|' -f 1 | sed 's/^\s*//' | sed 's/\s*$//')
     CURRENT_VAGRANT_BOX=$(echo "${line}" | cut -d '|' -f 2 | sed 's/^\s*//' | sed 's/\s*$//')
+    ENABLE_VBGUEST="false"
+    if [ "yes" == "$(echo "${line}" | cut -d '|' -f 3 | sed 's/^\s*//' | sed 's/\s*$//')" ]
+    then
+        ENABLE_VBGUEST="true"
+    fi
 
     if [ -n "${ANSIBLE_ROLES}" ]
     then
@@ -113,5 +122,5 @@ do
 
     ${FOUND} || continue
 
-    run "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE}
+    run "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
 done
