@@ -76,14 +76,13 @@ then
     exit 0;
 fi
 
-# Use the configuration file
-tail -n+3 "${CONFIG_FILE}" | while read line
+tail -n+3 "${CONFIG_FILE}" | while IFS='' read -r line || [[ -n "$line" ]]
 do
     FOUND=true
     # Remove trailing pipe (because we can use them or not)
-    line=$(echo ${line} | sed 's/^\s*|//' | sed 's/|\s*$//')
-    CURRENT_ANSIBLE_ROLE=$(echo ${line} | cut -d '|' -f 1 | sed 's/^\s*//' | sed 's/\s*$//')
-    CURRENT_VAGRANT_BOX=$(echo ${line} | cut -d '|' -f 2 | sed 's/^\s*//' | sed 's/\s*$//')
+    line=$(echo "${line}" | sed 's/^\s*|//' | sed 's/|\s*$//')
+    CURRENT_ANSIBLE_ROLE=$(echo "${line}" | cut -d '|' -f 1 | sed 's/^\s*//' | sed 's/\s*$//')
+    CURRENT_VAGRANT_BOX=$(echo "${line}" | cut -d '|' -f 2 | sed 's/^\s*//' | sed 's/\s*$//')
 
     if [ -n "${ANSIBLE_ROLES}" ]
     then

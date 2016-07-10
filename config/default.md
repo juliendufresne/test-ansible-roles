@@ -1,6 +1,5 @@
 | Ansible role            | Vagrant box         |
 | ----------------------- | ------------------- |
-| juliendufresne.influxdb | bento/debian-7.8    |
 | juliendufresne.influxdb | bento/debian-7.9    |
 | juliendufresne.influxdb | bento/debian-7.10   |
 | juliendufresne.influxdb | bento/debian-8.1    |

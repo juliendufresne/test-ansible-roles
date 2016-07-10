@@ -1,28 +1,40 @@
 #!/usr/bin/env bash
 
+# file containing the current report line
 REPORT_CURRENT_FILE=
 
 ensure_report_file_exists() {
     local repository_directory="$1"
     local ansible_role="$2"
-    local file="${repository_directory}/reports/${ansible_role}.md"
-    local template="${repository_directory}/reports/template"
+    local report_file="${repository_directory}/reports/${ansible_role}.md"
+    local template_file="${repository_directory}/reports/template"
+    local template_line=
+    local LHS=
+    local RHS=
 
-    if [ ! -f "${file}" ]
+    if [ ! -f "${report_file}" ]
     then
-        while read -r line
+        while read -r template_line
         do
-            while [[ "$line" =~ (\$\{[a-zA-Z_][a-zA-Z_0-9]*\}) ]]
+            while [[ "$template_line" =~ (\$\{[a-zA-Z_][a-zA-Z_0-9]*\}) ]]
             do
                 LHS=${BASH_REMATCH[1]}
                 RHS="$(eval echo "\"${LHS}\"")"
-                line=${line//${LHS}/${RHS}}
+                template_line=${template_line//${LHS}/${RHS}}
             done
-            echo "$line" >> "${file}"
-        done < "${template}"
+            echo "$template_line" >> "${report_file}"
+        done < "${template_file}"
     fi
 
-    echo "${file}"
+    echo "${report_file}"
+}
+
+report_display_column() {
+    local pad="$1"
+    local value="$2"
+
+    pad=$(echo "$pad"|tr '[:alnum:]' ' '|sed 's/| //'|sed 's/ |//')
+    printf '| %s%0.*s ' "${value}" $((${#pad} - ${#value})) "${pad}"
 }
 
 report_failure() {
@@ -35,33 +47,37 @@ report_success() {
 
 save_report() {
     local report_file="$1"
-    local vagrant_box="$2"
+    local distribution=$(cat "${REPORT_CURRENT_FILE}"|cut -d '|' -f 2 |sed 's/^\s*//'|sed 's/\s*$//')
+    local new_line=
 
-    echo " |" >>"${REPORT_CURRENT_FILE}"
+    echo " |" >> "${REPORT_CURRENT_FILE}"
 
-    if grep -q "| ${vagrant_box}" "${report_file}"
+    if grep -q -m 1 "| ${distribution}" "${report_file}"
     then
-        RSLT=$(cat "${REPORT_CURRENT_FILE}"|sed -e 's/[\/&]/\\&/g')
-        PATTERN=$(grep "| ${vagrant_box}" "${report_file}" | sed 's/[^^]/[&]/g; s/\^/\\^/g')
-        sed -i "s/${PATTERN}/${RSLT}/" "${report_file}"
+        line_number=$(grep -n -m 1 "| ${distribution}" "${report_file}" | sed 's/^\([0-9]*\).*$/\1/')
+        new_line=$(cat "${REPORT_CURRENT_FILE}"|sed -e 's/[\/&]/\\&/g')
+        sed -i "${line_number}s/.*/${new_line}/" "${report_file}"
     else
         cat "${REPORT_CURRENT_FILE}" >> "${report_file}"
     fi
 
-    rm ${REPORT_CURRENT_FILE}
+    rm "${REPORT_CURRENT_FILE}"
     REPORT_CURRENT_FILE=
 }
 
-report_display_column() {
-    local pad="$1"
-    local value="$2"
-
-    pad=$(echo "$pad"|tr '[:alnum:]' ' '|sed 's/| //'|sed 's/ |//')
-    printf '| %s%0.*s ' "${value}" $((${#pad} - ${#value})) "${pad}"
-}
-
 start_new_report() {
+    local id="$(vagrant ssh -- -n 'lsb_release --short --id')"
+    local release="$(vagrant ssh -- -n 'lsb_release --short --release')"
+    local distribution="$id $release"
+    local codename="$(vagrant ssh -- -n 'lsb_release --short --codename')"
+
+    if [ -n "${codename}" ]
+    then
+        distribution="$distribution ($codename)"
+    fi
+
     REPORT_CURRENT_FILE=$(mktemp)
-    report_display_column "| vagrant box             |" "$1"               >> "${REPORT_CURRENT_FILE}"
-    report_display_column "| last check date     |"     "$(date +"%F %T")" >> "${REPORT_CURRENT_FILE}"
+
+    report_display_column "| Distribution          |" "$distribution"    >> "${REPORT_CURRENT_FILE}"
+    report_display_column "| last check date     |"   "$(date +"%F %T")" >> "${REPORT_CURRENT_FILE}"
 }
