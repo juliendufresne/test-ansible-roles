@@ -19,6 +19,11 @@ Vagrant.configure(2) do |config|
         vb.customize ["modifyvm", :id, "--ioapic",              "on"]
     end
 
+    config.vm.provision "pre_script", type: "shell" do |pre_script|
+        pre_script.privileged = true
+        pre_script.path = "${pre_script}"
+    end
+
     config.vm.provision "ansible", type: "ansible_local" do |ansible|
         ansible.galaxy_role_file = "requirements.yml"
         ansible.install          = true

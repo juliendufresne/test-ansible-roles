@@ -21,7 +21,10 @@ clean_previous_vagrant_box() {
 create_vagrantfile() {
     local vagrant_box="$1"
     local is_vbguest_enabled="$2"
+    local pre_script="$3"
     local line=
+
+    [ -z "${pre_script}" ] && pre_script="provision/empty.sh"
 
     while read -r line
     do
@@ -59,8 +62,9 @@ run() {
     local ansible_role="$1"
     local vagrant_box="$2"
     local repository_directory="$3"
-    local is_verbose=$4
-    local is_vbguest_enabled="$5"
+    local pre_script="$4"
+    local is_verbose=$5
+    local is_vbguest_enabled="$6"
     local testing_directory="$(mktemp -d)"
 
     printf "# Testing ansible role \033[1;34m%s\033[0m in vagrant box \033[1;34m%s\033[0m\n" "${ansible_role}" "${vagrant_box}"
@@ -69,7 +73,7 @@ run() {
 
     # Ensure we are in the repository root
     cd "${repository_directory}"
-    cp -r inventory playbooks requirements.yml Vagrantfile.template "${testing_directory}"
+    cp -r inventory playbooks provision requirements.yml Vagrantfile.template "${testing_directory}"
 
     # Checks ansible roles requirements
     if [ ! -f "playbooks/${ansible_role}.yml" ]
@@ -85,7 +89,7 @@ run() {
 
     cd "${testing_directory}"
 
-    create_vagrantfile "${vagrant_box}" "${is_vbguest_enabled}"
+    create_vagrantfile "${vagrant_box}" "${is_vbguest_enabled}" "${pre_script}"
     local report_file=$(ensure_report_file_exists "${repository_directory}" "${ansible_role}")
 
     boot_vagrant_box ${is_verbose}

@@ -17,6 +17,7 @@ VAGRANT_BOXES=
 ANSIBLE_ROLES=
 CONFIG_FILE=
 ENABLE_VBGUEST="false"
+PRE_SCRIPT=
 while [[ $# -ge 1 ]]
 do
     case "$1" in
@@ -29,30 +30,27 @@ do
             fi
             ANSIBLE_ROLES="${ANSIBLE_ROLES} $2"
             shift
-            ;;
+        ;;
         --config-file)
-            CONFIG_FILE="$(resolve_config_file "$2" "${CONFIG_FILE}" "${REPOSITORY_DIRECTORY}")"
-            [ $? -ne 0 ] && { printf "$CONFIG_FILE"; exit 1; }
+            resolve_config_file "$2"
             shift
-            ;;
+        ;;
         --enable-vbguest)
             ENABLE_VBGUEST="true"
-            ;;
+        ;;
         -h|--help)
             usage
             exit 0
+        ;;
+        --pre-script)
+            resolve_pre_script "$2"
+            shift
         ;;
         -v|--verbose)
             IS_VERBOSE=true
         ;;
         --vagrant-box)
-            if [ -z "$2" ]
-            then
-                error "Argument is required for the $1 option"
-                usage
-                exit 1
-            fi
-            VAGRANT_BOXES="${VAGRANT_BOXES} $2"
+            resolve_vagrant_box "$2"
             shift
         ;;
         *)
@@ -75,10 +73,10 @@ then
     do
         for VAGRANT_BOX in ${VAGRANT_BOXES}
         do
-            run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
+            run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" "${PRE_SCRIPT}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
         done
     done
-    exit 0;
+    exit 0
 fi
 
 tail -n+3 "${CONFIG_FILE}" | while IFS='' read -r line || [[ -n "$line" ]]
@@ -86,8 +84,9 @@ do
     FOUND=true
     # Remove trailing pipe (because we can use them or not)
     line=$(echo "${line}" | sed 's/^\s*|//' | sed 's/|\s*$//')
-    CURRENT_ANSIBLE_ROLE=$(echo "${line}" | cut -d '|' -f 1 | sed 's/^\s*//' | sed 's/\s*$//')
-    CURRENT_VAGRANT_BOX=$(echo "${line}" | cut -d '|' -f 2 | sed 's/^\s*//' | sed 's/\s*$//')
+    CURRENT_ANSIBLE_ROLE="$(echo "${line}" | cut -d '|' -f 1 | sed 's/^\s*//' | sed 's/\s*$//')"
+    CURRENT_VAGRANT_BOX="$(echo "${line}" | cut -d '|' -f 2 | sed 's/^\s*//' | sed 's/\s*$//')"
+    PRE_SCRIPT="$(echo "${line}" | cut -d '|' -f 4 | sed 's/^\s*//' | sed 's/\s*$//')"
     ENABLE_VBGUEST="false"
     if [ "yes" == "$(echo "${line}" | cut -d '|' -f 3 | sed 's/^\s*//' | sed 's/\s*$//')" ]
     then
@@ -122,5 +121,5 @@ do
 
     ${FOUND} || continue
 
-    run "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
+    run "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" "${PRE_SCRIPT}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
 done

@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
+CONFIG_FILE=
+PRE_SCRIPT=
+VAGRANT_BOXES=
+
 resolve_config_file() {
     local current_option_value="$1"
-    local previously_defined_value="$2"
-    local repository_directory="$3"
+    local repository_directory="${REPOSITORY_DIRECTORY}"
 
     if [ -z "${current_option_value}" ]
     then
@@ -12,7 +15,7 @@ resolve_config_file() {
         exit 1
     fi
 
-    if [ -n "${previously_defined_value}" ]
+    if [ -n "${CONFIG_FILE}" ]
     then
         error "You can not specify multiple configuration files"
         usage
@@ -39,5 +42,43 @@ resolve_config_file() {
         exit 1
     fi
 
-    echo "${current_option_value}"
+    CONFIG_FILE="${current_option_value}"
+}
+
+resolve_pre_script() {
+    local value="$1"
+
+    if [ -n "${PRE_SCRIPT}" ]
+    then
+        error "You can not specify multiple values for option --pre-script"
+        usage
+        exit 1
+    fi
+
+    if [ -z "$value" ]
+    then
+        error "Argument is required for the --pre-script option"
+        usage
+        exit 1
+    fi
+
+    PRE_SCRIPT="$value"
+}
+
+resolve_vagrant_box() {
+    local value="$1"
+
+    if [ -z "${value}" ]
+    then
+        error "Argument is required for the --vagrant-box option"
+        usage
+        exit 1
+    fi
+
+    if [ -z "${VAGRANT_BOXES}" ]
+    then
+        VAGRANT_BOXES="${value}"
+    else
+        VAGRANT_BOXES="${VAGRANT_BOXES} ${value}"
+    fi
 }

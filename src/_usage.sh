@@ -28,9 +28,10 @@ usage() {
                                         - this project config directory
                                         To ease usage, you can omit file directory and extension.
                                         e.g: '--config-file default' may be resolved with <repository_root>/config/default.md
-        -h, --help                      show this help.
-        -v, --verbose                   increase verbosity.
         --enable-vbguest                enable the vagrant-vbguest plugin and install it if needed.
+        -h, --help                      show this help.
+        --pre-script PRE_SCRIPT         path to a script to run before running ansible playbook.
+        -v, --verbose                   increase verbosity.
         --vagrant-box VAGRANT_BOX       use specified vagrant box instead of default one. This option may be specified multiple times.
 "
 }
