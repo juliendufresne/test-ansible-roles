@@ -9,5 +9,5 @@ Columns explanation
 Results
 -------
 
-| Distribution          | Last check date     | From scratch    | Idempotency |
-| --------------------- | ------------------- | --------------- | ----------- |
+| Distribution           | Last check date     | From scratch    | Idempotency |
+| ---------------------- | ------------------- | --------------- | ----------- |

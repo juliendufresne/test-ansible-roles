@@ -77,6 +77,6 @@ start_new_report() {
 
     REPORT_CURRENT_FILE=$(readlink -m "report_line.md")
 
-    report_display_column "| Distribution          |" "$distribution"    >> "${REPORT_CURRENT_FILE}"
+    report_display_column "| Distribution           |" "$distribution"    >> "${REPORT_CURRENT_FILE}"
     report_display_column "| last check date     |"   "$(date +"%F %T")" >> "${REPORT_CURRENT_FILE}"
 }
