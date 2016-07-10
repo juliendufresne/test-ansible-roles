@@ -2,7 +2,7 @@
 
 boot_vagrant_box() {
     local is_verbose=$1
-    local output_file=$(mktemp)
+    local output_file=$(readlink -m "boot_vagrant_box__vagrant_up.out")
 
     printf "* booting vagrant box: "
     vagrant up --no-provision &>"${output_file}"
@@ -35,26 +35,22 @@ create_vagrantfile() {
 
 test_clean_install() {
     local is_verbose=$1
-    local output_file=$(mktemp)
+    local output_file=$(readlink -m "test_clean_install__vagrant_provision.out")
 
     printf "* Testing clean install: "
     vagrant provision &>"${output_file}"
     grep -q 'unreachable=0.*failed=0' "${output_file}"
     handle_result $? "${output_file}" ${is_verbose} true
-
-    rm "${output_file}"
 }
 
 test_idempotent() {
     local is_verbose=$1
-    local output_file=$(mktemp)
+    local output_file=$(readlink -m "test_idempotent__vagrant_provision.out")
 
     printf "* Idempotent test: "
     vagrant provision &>"${output_file}"
     grep -q 'changed=0.*unreachable=0.*failed=0' "${output_file}"
     handle_result $? "${output_file}" ${is_verbose} true
-
-    rm "${output_file}"
 }
 
 run() {

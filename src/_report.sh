@@ -61,7 +61,6 @@ save_report() {
         cat "${REPORT_CURRENT_FILE}" >> "${report_file}"
     fi
 
-    rm "${REPORT_CURRENT_FILE}"
     REPORT_CURRENT_FILE=
 }
 
@@ -76,7 +75,7 @@ start_new_report() {
         distribution="$distribution ($codename)"
     fi
 
-    REPORT_CURRENT_FILE=$(mktemp)
+    REPORT_CURRENT_FILE=$(readlink -m "report_line.md")
 
     report_display_column "| Distribution          |" "$distribution"    >> "${REPORT_CURRENT_FILE}"
     report_display_column "| last check date     |"   "$(date +"%F %T")" >> "${REPORT_CURRENT_FILE}"
