@@ -20,7 +20,7 @@ Vagrant.configure(2) do |config|
     end
 
     config.vm.provision "pre_script", type: "shell" do |pre_script|
-        pre_script.privileged = true
+        pre_script.privileged = false
         pre_script.path = "${pre_script}"
     end
 

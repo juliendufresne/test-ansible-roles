@@ -2,7 +2,7 @@
 
 if which yum &>/dev/null
 then
-    yum install -y epel-release python-crypto
-    yum reinstall -y python-crypto
-    yum install -y ansible
+    sudo yum install -y epel-release python-crypto
+    sudo yum reinstall -y python-crypto
+    sudo yum install -y ansible
 fi
