@@ -62,10 +62,7 @@ do
     shift
 done
 
-if [ -z "${CONFIG_FILE}" ]
-then
-    CONFIG_FILE="${DEFAULT_CONFIG_FILE}"
-fi
+[ -z "${CONFIG_FILE}" ] && CONFIG_FILE="${DEFAULT_CONFIG_FILE}"
 
 if [ -n "${ANSIBLE_ROLES}" ] && [ -n "${VAGRANT_BOXES}" ]
 then
@@ -73,7 +70,9 @@ then
     do
         for VAGRANT_BOX in ${VAGRANT_BOXES}
         do
-            run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" "${PRE_SCRIPT}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
+            run "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" "${PRE_SCRIPT}" ${IS_VERBOSE} ${ENABLE_VBGUEST} \
+                || display_command "$0" "${ANSIBLE_ROLE}" "${VAGRANT_BOX}" "${PRE_SCRIPT}" ${ENABLE_VBGUEST}
+            echo
         done
     done
     exit 0
@@ -87,11 +86,8 @@ do
     CURRENT_ANSIBLE_ROLE="$(echo "${line}" | cut -d '|' -f 1 | sed 's/^\s*//' | sed 's/\s*$//')"
     CURRENT_VAGRANT_BOX="$(echo "${line}" | cut -d '|' -f 2 | sed 's/^\s*//' | sed 's/\s*$//')"
     PRE_SCRIPT="$(echo "${line}" | cut -d '|' -f 4 | sed 's/^\s*//' | sed 's/\s*$//')"
-    ENABLE_VBGUEST="false"
-    if [ "yes" == "$(echo "${line}" | cut -d '|' -f 3 | sed 's/^\s*//' | sed 's/\s*$//')" ]
-    then
-        ENABLE_VBGUEST="true"
-    fi
+
+    [ "yes" == "$(echo "${line}" | cut -d '|' -f 3 | sed 's/^\s*//' | sed 's/\s*$//')" ] && ENABLE_VBGUEST="true" || ENABLE_VBGUEST="false"
 
     if [ -n "${ANSIBLE_ROLES}" ]
     then
@@ -121,5 +117,7 @@ do
 
     ${FOUND} || continue
 
-    run "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" "${PRE_SCRIPT}" ${IS_VERBOSE} ${ENABLE_VBGUEST}
+    run "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${REPOSITORY_DIRECTORY}" "${PRE_SCRIPT}" ${IS_VERBOSE} ${ENABLE_VBGUEST} \
+        || display_command "$0" "${CURRENT_ANSIBLE_ROLE}" "${CURRENT_VAGRANT_BOX}" "${PRE_SCRIPT}" ${ENABLE_VBGUEST}
+    echo
 done

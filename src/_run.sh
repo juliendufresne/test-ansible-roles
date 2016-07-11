@@ -6,7 +6,10 @@ boot_vagrant_box() {
 
     printf "* booting vagrant box: "
     vagrant up --no-provision &>"${output_file}"
+
     handle_result $? "${output_file}" ${is_verbose} false
+
+    return $?
 }
 
 clean_previous_vagrant_box() {
@@ -45,7 +48,10 @@ test_clean_install() {
     printf "* Testing clean install: "
     vagrant provision &>"${output_file}"
     grep -q 'unreachable=0.*failed=0' "${output_file}"
+
     handle_result $? "${output_file}" ${is_verbose} true
+
+    return $?
 }
 
 test_idempotent() {
@@ -55,7 +61,10 @@ test_idempotent() {
     printf "* Idempotent test: "
     vagrant provision &>"${output_file}"
     grep -q 'changed=0.*unreachable=0.*failed=0' "${output_file}"
+
     handle_result $? "${output_file}" ${is_verbose} true
+
+    return $?
 }
 
 run() {
@@ -66,6 +75,7 @@ run() {
     local is_verbose=$5
     local is_vbguest_enabled="$6"
     local testing_directory="$(mktemp -d)"
+    local status=0
 
     printf "# Testing ansible role \033[1;34m%s\033[0m in vagrant box \033[1;34m%s\033[0m\n" "${ansible_role}" "${vagrant_box}"
 
@@ -92,14 +102,16 @@ run() {
     create_vagrantfile "${vagrant_box}" "${is_vbguest_enabled}" "${pre_script}"
     local report_file=$(ensure_report_file_exists "${repository_directory}" "${ansible_role}")
 
-    boot_vagrant_box ${is_verbose}
+    boot_vagrant_box ${is_verbose} || status=1
     start_new_report
-    test_clean_install ${is_verbose}
-    test_idempotent ${is_verbose}
+    test_clean_install ${is_verbose} || status=1
+    test_idempotent ${is_verbose} || status=1
 
     save_report "${report_file}"
 
     vagrant destroy -f >/dev/null
     cd
     rm -rf "${testing_directory}"
+
+    return ${status}
 }
