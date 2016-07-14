@@ -92,7 +92,7 @@ run() {
         return 1
     fi
 
-    if echo "${ansible_role}" | grep -q "." && ! grep -q "${ansible_role}" requirements.yml
+    if echo "${ansible_role}" | grep -q "\." && ! grep -q "${ansible_role}" requirements.yml
     then
         warning "Your playbook ${ansible_role} looks like an ansible galaxy role but is not defined in requirements.yml"
     fi
