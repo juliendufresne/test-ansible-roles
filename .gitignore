@@ -1,1 +1,9 @@
+/config/local.md
+# Exclude local roles
 /playbooks/roles/
+# Exclude playbooks for local roles
+/playbooks/*.yml
+!/playbooks/*\.*.yml
+# Exclude reports from local roles
+/reports/*.md
+!/reports/*\.*.md

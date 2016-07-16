@@ -2,7 +2,7 @@
 
 boot_vagrant_box() {
     local is_verbose=$1
-    local output_file=$(readlink -m "boot_vagrant_box__vagrant_up.out")
+    local output_file=$(readlink -m "step_1__boot_vagrant_box__vagrant_up.out")
 
     printf "* booting vagrant box: "
     vagrant up --no-provision &>"${output_file}"
@@ -27,7 +27,7 @@ create_vagrantfile() {
     local pre_script="$3"
     local line=
 
-    [ -z "${pre_script}" ] && pre_script="provision/empty.sh"
+    [ -z "${pre_script}" ] && pre_script="provision/default.sh"
 
     while read -r line
     do
@@ -41,12 +41,24 @@ create_vagrantfile() {
     done < Vagrantfile.template
 }
 
+install_script() {
+    local is_verbose=$1
+    local output_file=$(readlink -m "step_2__install_script__vagrant_provision__shell.out")
+
+    printf "* install custom scripts: "
+    vagrant provision --provision-with shell &>"${output_file}"
+
+    handle_result $? "${output_file}" ${is_verbose} false
+
+    return $?
+}
+
 test_clean_install() {
     local is_verbose=$1
-    local output_file=$(readlink -m "test_clean_install__vagrant_provision.out")
+    local output_file=$(readlink -m "step_3__test_clean_install__vagrant_provision__ansible_local.out")
 
     printf "* Testing clean install: "
-    vagrant provision &>"${output_file}"
+    vagrant provision --provision-with ansible_local &>"${output_file}"
     grep -q 'unreachable=0.*failed=0' "${output_file}"
 
     handle_result $? "${output_file}" ${is_verbose} true
@@ -56,10 +68,10 @@ test_clean_install() {
 
 test_idempotent() {
     local is_verbose=$1
-    local output_file=$(readlink -m "test_idempotent__vagrant_provision.out")
+    local output_file=$(readlink -m "step_4__test_idempotent__vagrant_provision__ansible_local.out")
 
     printf "* Idempotent test: "
-    vagrant provision &>"${output_file}"
+    vagrant provision --provision-with ansible_local &>"${output_file}"
     grep -q 'changed=0.*unreachable=0.*failed=0' "${output_file}"
 
     handle_result $? "${output_file}" ${is_verbose} true
@@ -103,6 +115,7 @@ run() {
     local report_file=$(ensure_report_file_exists "${repository_directory}" "${ansible_role}")
 
     boot_vagrant_box ${is_verbose} || status=1
+    install_script ${is_verbose} || status=1
     start_new_report
     test_clean_install ${is_verbose} || status=1
     test_idempotent ${is_verbose} || status=1

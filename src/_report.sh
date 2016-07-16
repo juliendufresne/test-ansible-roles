@@ -74,11 +74,14 @@ save_report() {
 
 start_new_report() {
     REPORT_CURRENT_FILE=$(readlink -m "report_line.md")
-    install_lsb_release_package || {
+
+    if ! vagrant ssh -- -n "which lsb_release" &>/dev/null
+    then
         REPORT_CURRENT_FILE=
         warning "Unable to install lsb_release binary on the guest. No reports will be generated"
         return 0
-    }
+    fi
+
     local id="$(vagrant ssh -- -n 'lsb_release --short --id')"
     local release="$(vagrant ssh -- -n 'lsb_release --short --release')"
     local distribution="$id $release"
