@@ -1,0 +1,89 @@
+---
+- hosts: localhost
+  vars:
+    telegraf__conf__global_tags:
+      project: "test"
+    telegraf__conf__plugins:
+      - type: outputs
+        name: influxdb
+        parameters:
+          urls:
+            - "http://localhost:8086"
+          database: "telegraf"
+          precision: "s"
+          retention_policy: "default"
+          write_consistency: "any"
+          timeout: "5s"
+      - name: cpu
+        parameters:
+          percpu: true
+          totalcpu: true
+          fielddrop:
+            - "time_*"
+        tagdrop:
+          cpu:
+            - cpu6
+            - cpu7
+      - name: disk
+        parameters:
+          ignore_fs:
+            - "tmpfs"
+            - "devtmpfs"
+        tagpass:
+          fstype:
+            - "ext4"
+            - "xfs"
+          path: [ "/op", "/home*" ]
+    telegraf__conf__plugins__extra:
+      - name: cloudwatch
+        enabled: true
+        parameters:
+          region: 'us-east-1'
+          period: "1m"
+          delay: "1m"
+          interval: "1m"
+          namespace: "AWS/ELB"
+        tags:
+          tag1: foo
+          tag2: bar
+        sections:
+          - name: metrics
+            enabled: true
+            parameters:
+              names:
+                - 'Latency'
+                - 'RequestCount'
+            sections:
+              - name: dimensions
+                enabled: false
+                parameters:
+                  name: 'LoadBalancerName'
+                  value: 'p-example'
+              - name: dimensions
+                parameters:
+                  name: 'AvailabilityZone'
+                  value: '*'
+      - name: cloudwatch
+        enabled: true
+        tags:
+          tag1: foo
+          tag2: bar
+        sections:
+          - name: metrics
+            enabled: true
+            parameters:
+              names:
+                - 'Latency'
+                - 'RequestCount'
+            sections:
+              - name: dimensions
+                enabled: false
+                parameters:
+                  name: 'LoadBalancerName'
+                  value: 'p-example'
+              - name: dimensions
+                parameters:
+                  name: 'AvailabilityZone'
+                  value: '*'
+  roles:
+    - telegraf

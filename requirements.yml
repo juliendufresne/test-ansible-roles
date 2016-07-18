@@ -1,2 +1,3 @@
 ---
 - src: juliendufresne.influxdb
+- src: juliendufresne.telegraf
