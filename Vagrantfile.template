@@ -2,7 +2,7 @@ Vagrant.require_version ">= 1.8.4"
 ENV["LC_ALL"] = "en_US.UTF-8"
 
 if ${is_vbguest_enabled} and not Vagrant.has_plugin? "vagrant-vbguest"
-    if system "sudo vagrant plugin install vagrant-vbguest"
+    if system "vagrant plugin install vagrant-vbguest"
         exec "vagrant #{ARGV.join(' ')}"
     else
         abort "Installation of vagrant-vbguest plugin has failed. Aborting."
