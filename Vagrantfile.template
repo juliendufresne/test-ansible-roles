@@ -12,26 +12,19 @@ end
 Vagrant.configure(2) do |config|
     config.vm.box = "${vagrant_box}"
     config.vm.box_check_update = false
+    config.vm.network "private_network", ip: "${private_ip}"
 
     config.vm.provider :virtualbox do |vb|
         vb.memory = 512
         vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
         vb.customize ["modifyvm", :id, "--ioapic",              "on"]
+        vb.destroy_unused_network_interfaces = true
     end
 
     config.vm.provision "pre_script", type: "shell" do |pre_script|
         pre_script.privileged = false
         pre_script.path = "${pre_script}"
     end
-
-    config.vm.provision "ansible", type: "ansible_local" do |ansible|
-        ansible.install          = false
-        ansible.inventory_path   = "inventory"
-        ansible.playbook         = "playbooks/${ansible_role}.yml"
-        ansible.limit            = "all"
-    end
-
-    config.vm.synced_folder ".", "/vagrant"
 
     if Vagrant.has_plugin?("vagrant-hostmanager")
         config.hostmanager.enabled = false
